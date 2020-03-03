@@ -53,7 +53,7 @@ double dmin(double a, double b)
     return b;
 }
 
-double dsin(double x) {
+double sin(double x) {
   double s = sin(x);
   if (dabs(s)>1e-15)
     return s;
@@ -61,7 +61,7 @@ double dsin(double x) {
     return 0.0;
 }
 
-double dcos(double x) {
+double cos(double x) {
   double s = cos(x);
   if (dabs(s)>1e-15)
     return s;
@@ -69,7 +69,7 @@ double dcos(double x) {
     return 0.0;
 }
 
-double dexp(double x) {
+double exp(double x) {
   double s = exp(x);
   if (dabs(s)>1e-15)
     return s;

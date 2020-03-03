@@ -24,7 +24,7 @@ void myjobt(int mt)
   n1 = ni / nt;
   h1 = (b - a) / nt;
   a1 = a + h1 * mt;
-  if (mt<nt-1) b1 = a1 + h1; 
+  if (mt<nt-1) b1 = a1 + h1;
   else b1 = b;
   s = integrate(f1,a1,b1,n1);
 

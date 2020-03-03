@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <math.h>
 #include "mycom.h"
-#include <pthread.h>
+#include <pthread.h>e
 
 typedef struct tag_data_t {
   int n, nt, mt;
