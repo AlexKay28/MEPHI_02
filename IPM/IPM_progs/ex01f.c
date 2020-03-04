@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include <time.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <math.h>
+#include <omp.h>
 
 double f(double x);
 double f(double x)
@@ -24,14 +25,11 @@ double pi_calculate(const int n)
 
 int main(int argc, char *argv[])
 {	
-  long tick;
   double t, mypi;
 
-  tick = sysconf(_SC_CLK_TCK);
-
-  t = (double)(clock()*0.0001/tick);
-  mypi = pi_calculate(1000000000);
-  t = (double)(clock()*0.0001/tick)-t;
+  t = omp_get_wtime();
+  mypi = pi_calculate(100000000);
+  t = omp_get_wtime() - t;
 
   printf("Time: %lf sec mypi = %14.12lf\n",t,mypi);
 

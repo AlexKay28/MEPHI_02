@@ -71,10 +71,10 @@ int main(int argc, char *argv[])
     sprintf(sname,"%s.d",vname);
     ier = fopen_m(&Fi,sname,"rt");
     if (ier!=0) mpierr("Data file not opened",2);
-    fscanf(Fi,"n1=%d\n",&n1);
-    fscanf(Fi,"n2=%d\n",&n2);
-    fscanf(Fi,"im=%d\n",&im);
-    fscanf(Fi,"lp=%d\n",&lp);
+    i = fscanf(Fi,"n1=%d\n",&n1);
+    i = fscanf(Fi,"n2=%d\n",&n2);
+    i = fscanf(Fi,"im=%d\n",&im);
+    i = fscanf(Fi,"lp=%d\n",&lp);
     fclose_m(&Fi);
     if (argc>2) sscanf(argv[2],"%d",&n1);
     if (argc>3) sscanf(argv[3],"%d",&n2);

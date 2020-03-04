@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <math.h>
 #include "mycom.h"
-#include <pthread.h>e
+#include <pthread.h>
 
 typedef struct tag_data_t {
   int n, nt, mt;
@@ -27,7 +27,7 @@ void* myjobt(void* d);
 void* myjobt(void* d)
 {
   int n1; double a1, b1, h1;
-  data_t* dd = (data_t *)d;
+  data_t* dd = (data_t *)d; 
 
   n1 = dd->n / dd->nt;
 
@@ -68,7 +68,7 @@ void ThreadInit()
     (data+i)->nt=nt;
     (data+i)->mt=i;
     (data+i)->sum = &sum;
-    if (pthread_create(threads+i, 0, myjobt, (void*)(data+i)))
+    if (pthread_create(threads+i,0,myjobt,(void*)(data+i)))
       myerr("Can not create thread",2);
   }
 

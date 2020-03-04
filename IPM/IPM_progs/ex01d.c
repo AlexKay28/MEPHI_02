@@ -52,10 +52,12 @@ int main(int argc, char *argv[])
   double t, mypi;
 
   time_tick();
+
   time_start();
   mypi = pi_calculate(1000000000);
   t = time_stop();
-  printf("Time: %lf sec Pi = %14.12lf\n",t,mypi);
+
+  printf("Time: %lf sec mypi = %14.12lf\n",t,mypi);
 
   return 0;
 }

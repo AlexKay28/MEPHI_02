@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
-##include "mycom.h"
-
+#include "mycom.h"
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -29,8 +28,8 @@ union semun {
 int np, mp;
 int semid;
 int shmid;
-msg_t* msg;
-struct sembuf sem_loc   = {0,-1,0}; //??????????????
+msg_t* msg; 
+struct sembuf sem_loc   = {0,-1,0};
 struct sembuf sem_unloc = {0, 1,0};
 union semun s_un;
 
@@ -56,22 +55,18 @@ void myjobp()
 
   printf("mp=%d a1=%le b1=%le n1=%d s1=%le\n",mp,a1,b1,n1,s1);
 
-  //==========================================================================================
-  while(semop(semid, &sem_loc, 1)<0); // wait + lock
-  msg->n++; //ссылка на ключ
-  msg->s += s1;//ссыока на значение
-  while(semop(semid, &sem_unloc, 1)<0); // wait + unlock
+  while(semop(semid,&sem_loc,1)<0); // wait + lock
 
-  //==========================================================================================
+  msg->n++; msg->s += s1;
+
+  while(semop(semid,&sem_unloc,1)<0); // wait + unlock
+
   if (mp == 0){
     n1 = 0;
     while(n1<np){
-
-      while(semop(semid, &sem_loc, 1)<0); // wait + lock
-      n1 = msg->n;
-      sum = msg->s;
-      while(semop(semid, &sem_unloc, 1)<0); // wait + unlock
-
+      while(semop(semid,&sem_loc,1)<0); // wait + lock
+      n1 = msg->n; sum = msg->s;
+      while(semop(semid,&sem_unloc,1)<0); // wait + unlock
     }
   }
 
@@ -84,8 +79,7 @@ void NetInit(int np, int* mp)
   int i; pid_t spid = 0;
 
   if (np>1){
-    *mp=1;
-    spid = fork();
+    *mp=1; spid = fork();
     if (spid > 0 && np > 2)
       for (i=2;i<np;i++)
         if (spid > 0){ *mp=i; spid = fork();}
@@ -107,15 +101,13 @@ void ShrMemInit()
     if ((msg = (msg_t*) shmat(shmid, 0, 0)) == NULL)
       myerr("Can not attach shared memory segment",2);
 
-    msg->n = 0;
-    msg->s = 0; // initialization of shared memory
+    msg->n = 0; msg->s = 0; // initialization of shared memory 
 
     if ((semid = semget(SEM_ID, 1, PERMS | IPC_CREAT )) < 0)
       if ((semid = semget(SEM_ID, 1, PERMS)) < 0)
         myerr("Can not find semaphore",3);
 
-    s_un.val = 1;
-    semctl(semid, 0 , SETVAL, s_un); // unlock
+    s_un.val = 1; semctl(semid,0,SETVAL,s_un); // unlock
   }
   else {
     while((shmid = shmget(SHM_ID,sizeof(msg_t),PERMS)) < 0);
@@ -161,8 +153,7 @@ int main(int argc, char *argv[])
   }
 
   sscanf(argv[1],"%d",&np);
-  if (np<1) np = 1;
-  mp = 0;
+  if (np<1) np = 1; mp = 0;
 
   t = mytime(0);
 

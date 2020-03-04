@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
   MyNetInit(&argc,&argv,&np,&mp,&nl,pname,&tick);
 
-  fprintf(stderr,"System %s netsize: %d, process: %d, tick=%12le\n",pname,np,mp,tick);
+  fprintf(stderr,"Netsize: %d, process: %d, system: %s, tick=%12le\n",np,mp,pname,tick);
   sleep(1);
 
   sprintf(sname+7,"%02d",mp);

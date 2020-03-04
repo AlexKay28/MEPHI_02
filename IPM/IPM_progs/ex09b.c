@@ -11,7 +11,7 @@ double tick, t1, t2, t3;
 int main(int argc, char *argv[])
 {
   MPI_Group gr, gr1, gr2;
-  MPI_Comm cm1, cm2, cm3;
+  MPI_Comm cm1, cm2;
   int i, np1, np2, mp1, mp2, ranks[128];
   double s, p;
 
@@ -38,14 +38,13 @@ int main(int argc, char *argv[])
   MPI_Comm_create(MPI_COMM_WORLD, gr1, &cm1);
   MPI_Comm_create(MPI_COMM_WORLD, gr2, &cm2); 
 
-  if (cm1>0) cm3 = cm1; else if (cm2>0) cm3 = cm2; else cm3 = 0;
-
   s = 5.0 * (mp+1); p = 0.0;
 
-  MPI_Reduce(&s, &p, 1, MPI_DOUBLE, MPI_SUM, 0, cm3);
+  if (mp1>-1) MPI_Reduce(&s, &p, 1, MPI_DOUBLE, MPI_SUM, 0, cm1);
+  if (mp2>-1) MPI_Reduce(&s, &p, 1, MPI_DOUBLE, MPI_SUM, 0, cm2);
 
-  fprintf(stderr,"mp=%d np1=%d np2=%d mp1=%d mp2=%d cm1=%d cm2=%d cm3=%d s=%le p=%le\n",
-    mp,np1,np2,mp1,mp2,cm1,cm2,cm3,s,p);
+  fprintf(stderr,"mp=%d np1=%8d np2=%8d mp1=%8d mp2=%8d s=%le p=%le\n",
+    mp,np1,np2,mp1,mp2,s,p);
 
   MPI_Group_free(&gr);
   MPI_Group_free(&gr1);

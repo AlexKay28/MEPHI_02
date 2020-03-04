@@ -81,15 +81,15 @@ int main(int argc, char *argv[])
   if (mp==0) {
     ier = fopen_m(&Fi,"ex12a.d","rt");
     if (ier!=0) mpierr("Data file not opened",2);
-    fscanf(Fi,"xa=%le\n",&xa);
-    fscanf(Fi,"xb=%le\n",&xb);
-    fscanf(Fi,"ua=%le\n",&ua);
-    fscanf(Fi,"ub=%le\n",&ub);
-    fscanf(Fi,"alf=%le\n",&alf);
-    fscanf(Fi,"eps=%le\n",&eps);
-    fscanf(Fi,"itm=%d\n",&itm);
-    fscanf(Fi,"nx=%d\n",&nx);
-    fscanf(Fi,"lp=%d\n",&lp);
+    i = fscanf(Fi,"xa=%le\n",&xa);
+    i = fscanf(Fi,"xb=%le\n",&xb);
+    i = fscanf(Fi,"ua=%le\n",&ua);
+    i = fscanf(Fi,"ub=%le\n",&ub);
+    i = fscanf(Fi,"alf=%le\n",&alf);
+    i = fscanf(Fi,"eps=%le\n",&eps);
+    i = fscanf(Fi,"itm=%d\n",&itm);
+    i = fscanf(Fi,"nx=%d\n",&nx);
+    i = fscanf(Fi,"lp=%d\n",&lp);
     fclose_m(&Fi);
     if (argc>1) sscanf(argv[1],"%d",&nx);
   }

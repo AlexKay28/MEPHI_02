@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 
 #define read_cpu_tick(high,low)   \
         asm("rdtsc                            \n\
@@ -43,12 +44,18 @@ int main(int argc, char *argv[])
   double t, t1, t2, mypi;
   freq = 2000.0;
   sleep(1);
+
   t1 = my_cpu_time();
   printf("%lf\n",t1);
+
   mypi = pi_calculate(1000000000);
+
   t2 = my_cpu_time();
   printf("%lf\n",t2);
+
   t = t2 - t1;
-  printf("Time: %lf sec Pi = %14.12lf\n",t,mypi);
+
+  printf("Time: %lf sec mypi = %14.12lf\n",t,mypi);
+
   return 0;
 }

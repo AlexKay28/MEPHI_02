@@ -42,7 +42,7 @@ double u(double x1, double x2) {
 
 int main(int argc, char *argv[])
 {
-  int i1, i2, k1, k2, n1p, n2p, n12p;
+  int i, i1, i2, k1, k2, n1p, n2p, n12p;
   int n, m, i11, i12, i21, i22, nc1, nc2, nc1m, nc2m, nc12;
   double h1, h2, h12, h22, h0, s0, s1, s2;
   double *xx1, *xx2, *cv1, *cv2, *gg, *yy;
@@ -62,9 +62,9 @@ int main(int argc, char *argv[])
     sprintf(sname,"%s.d",vname);
     ier = fopen_m(&Fi,sname,"rt");
     if (ier!=0) mpierr("Data file not opened",2);
-    fscanf(Fi,"n1=%d\n",&n1);
-    fscanf(Fi,"n2=%d\n",&n2);
-    fscanf(Fi,"lp=%d\n",&lp);
+    i = fscanf(Fi,"n1=%d\n",&n1);
+    i = fscanf(Fi,"n2=%d\n",&n2);
+    i = fscanf(Fi,"lp=%d\n",&lp);
     fclose_m(&Fi);
     if (argc>1) sscanf(argv[1],"%d",&n1);
     if (argc>2) sscanf(argv[2],"%d",&n2);
