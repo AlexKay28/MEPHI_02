@@ -4,6 +4,17 @@
 //
 //  u(xa) = ua, u(xb) = ub
 //
+// Coefficients
+// k(x)=1+((x-a)/(b-a))^2
+//
+// q(x)=1+((b-x)/(b-a))^2
+//
+// f(x)=q(x)u(x)-k'(x)u'(x)-k(x)u''(x)
+//
+// test fucntion
+// u(x)=ua*cos(pi(x-a)/2*(b-a))+ub*sin(pi(x-a)/2(b-a))
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +23,8 @@
 #include "mycom.h"
 #include "mynet.h"
 #include "myprog.h"
+
+#define pi 3.14159265358979323846264338327950280 
 
 int np, mp, nl, ier, lp;
 char pname[MPI_MAX_PROCESSOR_NAME];
@@ -41,6 +54,7 @@ double q(double x) {
   return 1.0 + ak*(xb-x)*(xb-x);
 }
 
+// TEST FUNCTION!!
 double u(double x);
 double u(double x) {
   return ua*cos(px*(x-xa)) + ub*sin(px*(x-xa));
@@ -58,7 +72,7 @@ double u2(double x) {
 
 double f(double x);
 double f(double x) {
-  return - k1(x)*u1(x) - k(x)*u2(x) + q(x)*u(x);
+  return -k1(x)*u1(x) - k(x)*u2(x) + q(x)*u(x);
 }
 
 int main(int argc, char *argv[])
@@ -108,12 +122,18 @@ int main(int argc, char *argv[])
 
   t1 = MPI_Wtime();
 
-  ak = 1.0/((xb-xa)*(xb-xa)); px = 0.5*pi/(xb-xa); px2 = px*px;
+  // HERE WE GO
+  ak = 1.0/((xb-xa)*(xb-xa)); 
+  px = 0.5*pi/(xb-xa); 
+  px2 = px*px;
 
-  hx = (xb-xa)/nx; hx2 = hx * hx;
+  hx = (xb-xa)/nx; 
+  hx2 = hx * hx;
 
   MyRange(np,mp,0,nx,&i1,&i2,&nc);
-  ncm = nc-1; ncp = 2*(np-1); ncx = imax(nc,ncp);
+  ncm = nc-1; 
+  ncp = 2*(np-1);
+  ncx = imax(nc,ncp);
 
   fprintf(Fo,"i1=%d i2=%d nc=%d\n",i1,i2,nc);
 
@@ -125,38 +145,56 @@ int main(int argc, char *argv[])
   al = (double*)(malloc(sizeof(double)*ncx));
   y1 = (double*)(malloc(sizeof(double)*nc));
 
+  // оформляем массив сеточки
   for (i=0; i<nc; i++)
     xx[i] = xa + hx * (i1 + i);
 
+  // первый узел сеточки
   if (mp==0) {
-    aa[0] = 0.0; bb[0] = 0.0; cc[0] = 1.0; ff[0] = ua;
-  }
+    aa[0] = 0.0; 
+    bb[0] = 0.0; 
+    cc[0] = 1.0; 
+    ff[0] = ua;
+  }  
   else {
-    s0 = k(xx[0]); s1 = k(xx[0]-hx); s2 = k(xx[0]+hx);
+    s0 = k(xx[0]);
+    s1 = k(xx[0]-hx);
+    s2 = k(xx[0]+hx);
     aa[0] = 0.5 * (s0 + s1);
     bb[0] = 0.5 * (s0 + s2);
     cc[0] = hx2 * q(xx[0]) + aa[0] + bb[0];
     ff[0] = hx2 * f(xx[0]);
   }
 
+  // расчет во внутренних узлах сеточки
   for (i=1; i<ncm; i++) {
-    s0 = k(xx[i]); s1 = k(xx[i-1]); s2 = k(xx[i+1]);
+    s0 = k(xx[i]);
+    s1 = k(xx[i-1]); 
+    s2 = k(xx[i+1]);
     aa[i] = 0.5 * (s0 + s1);
     bb[i] = 0.5 * (s0 + s2);
     cc[i] = hx2 * q(xx[i]) + aa[i] + bb[i];
     ff[i] = hx2 * f(xx[i]);
   }
 
+  // последний узел сеточки
   if (mp==np-1) {
-    aa[ncm] = 0.0; bb[ncm] = 0.0; cc[ncm] = 1.0; ff[ncm] = ub;
+    aa[ncm] = 0.0;
+    bb[ncm] = 0.0; 
+    cc[ncm] = 1.0; 
+    ff[ncm] = ub;
   }
   else {
-    s0 = k(xx[ncm]); s1 = k(xx[ncm]-hx); s2 = k(xx[ncm]+hx);
+    s0 = k(xx[ncm]); 
+    s1 = k(xx[ncm]-hx); 
+    s2 = k(xx[ncm]+hx);
     aa[ncm] = 0.5 * (s0 + s1);
     bb[ncm] = 0.5 * (s0 + s2);
     cc[ncm] = hx2 * q(xx[ncm]) + aa[ncm] + bb[ncm];
     ff[ncm] = hx2 * f(xx[ncm]);
   }
+
+  // на данной строке программы мы имеем матрицу значений, теперь ее нужно обсчитать! 
 
   if (lp>0)
     for (i=0; i<nc; i++)
@@ -179,11 +217,17 @@ int main(int argc, char *argv[])
     a1 = aa[ncm]; b1 = bb[ncm]; c1 = cc[ncm]; f1 = ff[ncm];
 
     if (mp==0) {
-      aa[ncm] = 0.0; bb[ncm] = 0.0; cc[ncm] = 1.0; ff[ncm] = 0.0;
+      aa[ncm] = 0.0;
+      bb[ncm] = 0.0;
+      cc[ncm] = 1.0; 
+      ff[ncm] = 0.0;
+
       ier = prog_right(nc,aa,bb,cc,ff,al,y1);
       if (ier!=0) mpierr("Bad solution 1",1);
 
-      for (i=0; i<ncm; i++) ff[i] = 0.0; ff[ncm] = 1.0;
+      for (i=0; i<ncm; i++) ff[i] = 0.0;
+      ff[ncm] = 1.0;
+    
       ier = prog_right(nc,aa,bb,cc,ff,al,y2);
       if (ier!=0) mpierr("Bad solution 2",2);
 
@@ -193,16 +237,26 @@ int main(int argc, char *argv[])
             i,xx[i],y1[i],y2[i]);
     }
     else if (mp<np-1) {
-      aa[0] = 0.0; bb[0] = 0.0; cc[0] = 1.0; ff[0] = 0.0;
-      aa[ncm] = 0.0; bb[ncm] = 0.0; cc[ncm] = 1.0; ff[ncm] = 0.0;
+      aa[0] = 0.0; 
+      bb[0] = 0.0; 
+      cc[0] = 1.0; 
+      ff[0] = 0.0;
+
+      aa[ncm] = 0.0; 
+      bb[ncm] = 0.0; 
+      cc[ncm] = 1.0; 
+      ff[ncm] = 0.0;
+
       ier = prog_right(nc,aa,bb,cc,ff,al,y1);
       if (ier!=0) mpierr("Bad solution 1",1);
 
-      for (i=0; i<ncm; i++) ff[i] = 0.0; ff[ncm] = 1.0;
+      for (i=0; i<ncm; i++) ff[i] = 0.0; 
+      ff[ncm] = 1.0;
       ier = prog_right(nc,aa,bb,cc,ff,al,y2);
       if (ier!=0) mpierr("Bad solution 2",2);
 
-      ff[0] = 1.0; for (i=1; i<=ncm; i++) ff[i] = 0.0;
+      ff[0] = 1.0; 
+      for (i=1; i<=ncm; i++) ff[i] = 0.0;
       ier = prog_right(nc,aa,bb,cc,ff,al,y3);
       if (ier!=0) mpierr("Bad solution 3",3);
 
@@ -212,11 +266,15 @@ int main(int argc, char *argv[])
             i,xx[i],y1[i],y2[i],y3[i]);
     }
     else {
-      aa[0] = 0.0; bb[0] = 0.0; cc[0] = 1.0; ff[0] = 0.0;
+      aa[0] = 0.0; 
+      bb[0] = 0.0; 
+      cc[0] = 1.0; 
+      ff[0] = 0.0;
       ier = prog_right(nc,aa,bb,cc,ff,al,y1);
       if (ier!=0) mpierr("Bad solution 1",1);
 
-      ff[0] = 1.0; for (i=1; i<=ncm; i++) ff[i] = 0.0;
+      ff[0] = 1.0; 
+      for (i=1; i<=ncm; i++) ff[i] = 0.0;
       ier = prog_right(nc,aa,bb,cc,ff,al,y3);
       if (ier!=0) mpierr("Bad solution 3",3);
 
