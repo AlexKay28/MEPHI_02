@@ -108,12 +108,16 @@ int main(int argc, char *argv[])
 
   t1 = MPI_Wtime();
 
-  ak = 1.0/((xb-xa)*(xb-xa)); px = 0.5*pi/(xb-xa);
+  ak = 1.0/((xb-xa)*(xb-xa)); 
+  px = 0.5*pi/(xb-xa);
 
-  hx = (xb-xa)/nx; hx2 = hx * hx;
+  hx = (xb-xa)/nx; 
+  hx2 = hx * hx;
 
   MyRange(np,mp,0,nx,&i1,&i2,&nc);
-  ncm = nc-1; ncp = 2*(np-1); ncx = imax(nc,ncp);
+  ncm = nc-1; 
+  ncp = 2*(np-1); 
+  ncx = imax(nc,ncp);
 
   fprintf(Fo,"i1=%d i2=%d nc=%d\n",i1,i2,nc);
 
@@ -129,14 +133,17 @@ int main(int argc, char *argv[])
     xx[i] = xa + hx * (i1 + i);
 
   if (mp==0) {
-    s0 = k(xx[0]); s2 = k(xx[1]);
+    s0 = k(xx[0]); 
+    s2 = k(xx[1]);
     aa[0] = 0.0;
     bb[0] = 0.5 * (s0 + s2);
     cc[0] = 0.5 * hx2 * q(xx[0]) + bb[0];
     ff[0] = 0.5 * hx2 * f(xx[0]) - hx * ua * s0;
   }
   else {
-    s0 = k(xx[0]); s1 = k(xx[0]-hx); s2 = k(xx[0]+hx);
+    s0 = k(xx[0]); 
+    s1 = k(xx[0]-hx); 
+    s2 = k(xx[0]+hx);
     aa[0] = 0.5 * (s0 + s1);
     bb[0] = 0.5 * (s0 + s2);
     cc[0] = hx2 * q(xx[0]) + aa[0] + bb[0];
@@ -144,7 +151,9 @@ int main(int argc, char *argv[])
   }
 
   for (i=1; i<ncm; i++) {
-    s0 = k(xx[i]); s1 = k(xx[i-1]); s2 = k(xx[i+1]);
+    s0 = k(xx[i]); 
+    s1 = k(xx[i-1]); 
+    s2 = k(xx[i+1]);
     aa[i] = 0.5 * (s0 + s1);
     bb[i] = 0.5 * (s0 + s2);
     cc[i] = hx2 * q(xx[i]) + aa[i] + bb[i];
@@ -152,14 +161,17 @@ int main(int argc, char *argv[])
   }
 
   if (mp==np-1) {
-    s0 = k(xx[ncm]); s1 = k(xx[ncm-1]);
+    s0 = k(xx[ncm]); 
+    s1 = k(xx[ncm-1]);
     aa[ncm] = 0.5 * (s0 + s1);
     bb[ncm] = 0.0;
     cc[ncm] = 0.5 * hx2 * q(xx[ncm]) + aa[ncm];
     ff[ncm] = 0.5 * hx2 * f(xx[ncm]) + hx * ub * s0;
   }
   else {
-    s0 = k(xx[ncm]); s1 = k(xx[ncm]-hx); s2 = k(xx[ncm]+hx);
+    s0 = k(xx[ncm]); 
+    s1 = k(xx[ncm]-hx); 
+    s2 = k(xx[ncm]+hx);
     aa[ncm] = 0.5 * (s0 + s1);
     bb[ncm] = 0.5 * (s0 + s2);
     cc[ncm] = hx2 * q(xx[ncm]) + aa[ncm] + bb[ncm];
@@ -187,11 +199,17 @@ int main(int argc, char *argv[])
     a1 = aa[ncm]; b1 = bb[ncm]; c1 = cc[ncm]; f1 = ff[ncm];
 
     if (mp==0) {
-      aa[ncm] = 0.0; bb[ncm] = 0.0; cc[ncm] = 1.0; ff[ncm] = 0.0;
+      aa[ncm] = 0.0;
+      bb[ncm] = 0.0; 
+      cc[ncm] = 1.0; 
+      ff[ncm] = 0.0;
+
       ier = prog_right(nc,aa,bb,cc,ff,al,y1);
       if (ier!=0) mpierr("Bad solution 1",1);
 
-      for (i=0; i<ncm; i++) ff[i] = 0.0; ff[ncm] = 1.0;
+      for (i=0; i<ncm; i++) ff[i] = 0.0; 
+      ff[ncm] = 1.0;
+
       ier = prog_right(nc,aa,bb,cc,ff,al,y2);
       if (ier!=0) mpierr("Bad solution 2",2);
 
@@ -201,16 +219,26 @@ int main(int argc, char *argv[])
             i,xx[i],y1[i],y2[i]);
     }
     else if (mp<np-1) {
-      aa[0] = 0.0; bb[0] = 0.0; cc[0] = 1.0; ff[0] = 0.0;
-      aa[ncm] = 0.0; bb[ncm] = 0.0; cc[ncm] = 1.0; ff[ncm] = 0.0;
+      aa[0] = 0.0; 
+      bb[0] = 0.0; 
+      cc[0] = 1.0; 
+      ff[0] = 0.0;
+
+      aa[ncm] = 0.0; 
+      bb[ncm] = 0.0; 
+      cc[ncm] = 1.0; 
+      ff[ncm] = 0.0;
+
       ier = prog_right(nc,aa,bb,cc,ff,al,y1);
       if (ier!=0) mpierr("Bad solution 1",1);
 
-      for (i=0; i<ncm; i++) ff[i] = 0.0; ff[ncm] = 1.0;
+      for (i=0; i<ncm; i++) ff[i] = 0.0; 
+      ff[ncm] = 1.0;
       ier = prog_right(nc,aa,bb,cc,ff,al,y2);
       if (ier!=0) mpierr("Bad solution 2",2);
 
-      ff[0] = 1.0; for (i=1; i<=ncm; i++) ff[i] = 0.0;
+      ff[0] = 1.0; 
+      for (i=1; i<=ncm; i++) ff[i] = 0.0;
       ier = prog_right(nc,aa,bb,cc,ff,al,y3);
       if (ier!=0) mpierr("Bad solution 3",3);
 
@@ -220,11 +248,15 @@ int main(int argc, char *argv[])
             i,xx[i],y1[i],y2[i],y3[i]);
     }
     else {
-      aa[0] = 0.0; bb[0] = 0.0; cc[0] = 1.0; ff[0] = 0.0;
+      aa[0] = 0.0; 
+      bb[0] = 0.0; 
+      cc[0] = 1.0; 
+      ff[0] = 0.0;
       ier = prog_right(nc,aa,bb,cc,ff,al,y1);
       if (ier!=0) mpierr("Bad solution 1",1);
 
-      ff[0] = 1.0; for (i=1; i<=ncm; i++) ff[i] = 0.0;
+      ff[0] = 1.0; 
+      for (i=1; i<=ncm; i++) ff[i] = 0.0;
       ier = prog_right(nc,aa,bb,cc,ff,al,y3);
       if (ier!=0) mpierr("Bad solution 3",3);
 
