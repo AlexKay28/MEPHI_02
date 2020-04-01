@@ -6,6 +6,7 @@
 #include "mycom.h"
 #include "mynet.h"
 #include "myprog.h"
+#include <pthread.h>
 #define pi 3.14159265358979323846264338327950280
 
 int np, mp, nl, ier, lp;
@@ -14,6 +15,8 @@ char sname[10] = "ex11c.p00";
 MPI_Status status;
 union_t buf;
 double tick, t1, t2, t3;
+
+pthread_t* threads;
 
 FILE *Fi = NULL;
 FILE *Fo = NULL;
@@ -63,11 +66,27 @@ double f(double x) {
   return -k1(x)*u1(x) - k(x)*u2(x) + q(x)*u(x);
 }
 
+typedef struct ARGS{
+  int nc;
+  double *aa, *bb, *cc, *ff, *al, *y1;
+} someArgs_t;
+
+void* one_proc(void *args);
+void* one_proc(void *args){
+  someArgs_t *arg = (someArgs_t*) args;
+  // правая прогонка
+  ier = prog_right(arg->nc,arg->aa,arg->bb,arg->cc,arg->ff,arg->al,arg->y1);
+  if (ier!=0) mpierr("Bad solution 1",1);
+  return 0;
+}
+
 int main(int argc, char *argv[])
 {
-  int i, j, i1, i2, nc, ncm, ncp, ncx;
+  int i, j, i1, i2, nc, ncm, ncp, ncx, nt;
   double hx, hx2, s0, s1, s2, a0, b0, c0, f0, a1, b1, c1, f1;
   double *xx, *aa, *bb, *cc, *dd, *ee, *ff, *al, *y1, *y2, *y3, *y4;
+
+  someArgs_t ARGS[nt];
 
   MyNetInit(&argc, &argv, &np, &mp, &nl, pname, &tick);
 
@@ -199,12 +218,36 @@ int main(int argc, char *argv[])
   }
 
   // случае когда всего 1 процесс..
+  // ========================================================================================================
   if (np<2) {
     // правая прогонка
-    ier = prog_right(nc,aa,bb,cc,ff,al,y1);
-    if (ier!=0) mpierr("Bad solution 1",1);
+    nt=1;
+    if (nt<2) {
+      ARGS[0].nc = nc;
+      ARGS[0].aa = aa; ARGS[0].bb = bb; ARGS[0].cc = cc;
+      ARGS[0].ff = ff; ARGS[0].al = al; ARGS[0].y1 = y1;
+      one_proc((void*) &ARGS[0]);
+    } else {
+      if (!(threads = (pthread_t*) malloc(nt*sizeof(pthread_t))))
+        myerr("server: not enough memory",1);
+
+      for (i=0; i<nt; i++){
+        ARGS[i].nc = (int)nc/nt*i;
+        ARGS[i].aa = aa; ARGS[i].bb = bb; ARGS[i].cc = cc;
+        ARGS[i].ff = ff; ARGS[i].al = al; ARGS[i].y1 = y1;
+        if (pthread_create(threads+i,0,one_proc,(void*) &ARGS[i]))
+          myerr("server: cannot create thread",2);
+      }
+
+      for (i=0; i<nt; i++)
+        if (pthread_join(threads[i],0))
+          myerr("server: cannot wait thread",3);
+      free(threads);
+    }
     t2 = 0.0;
-  } // процессов больше чем 2
+  }
+  // ========================================================================================================
+  // процессов больше чем 2
   else {
     y2 = (double*)(malloc(sizeof(double)*nc));
     y3 = (double*)(malloc(sizeof(double)*nc));
@@ -217,10 +260,8 @@ int main(int argc, char *argv[])
 
     // первый процесс
     if (mp==0) {
-      aa[ncm] = 0.0;
-      bb[ncm] = 0.0;
-      cc[ncm] = 1.0;
-      ff[ncm] = 0.0;
+      aa[ncm] = 0.0; bb[ncm] = 0.0;
+      cc[ncm] = 1.0; ff[ncm] = 0.0;
 
       ier = prog_right(nc,aa,bb,cc,ff,al,y1);
       if (ier!=0) mpierr("Bad solution 1",1);
@@ -237,15 +278,11 @@ int main(int argc, char *argv[])
     }
     // процессы на внутренних узлах сетки
     else if (mp<np-1) {
-      aa[0] = 0.0;
-      bb[0] = 0.0;
-      cc[0] = 1.0;
-      ff[0] = 0.0;
+      aa[0] = 0.0; bb[0] = 0.0;
+      cc[0] = 1.0; ff[0] = 0.0;
 
-      aa[ncm] = 0.0;
-      bb[ncm] = 0.0;
-      cc[ncm] = 1.0;
-      ff[ncm] = 0.0;
+      aa[ncm] = 0.0; bb[ncm] = 0.0;
+      cc[ncm] = 1.0; ff[ncm] = 0.0;
 
       ier = prog_right(nc,aa,bb,cc,ff,al,y1);
       if (ier!=0) mpierr("Bad solution 1",1);
@@ -268,10 +305,8 @@ int main(int argc, char *argv[])
             i,xx[i],y1[i],y2[i],y3[i]);
     } // процесс на последнем узле сетки
     else {
-      aa[0] = 0.0;
-      bb[0] = 0.0;
-      cc[0] = 1.0;
-      ff[0] = 0.0;
+      aa[0] = 0.0; bb[0] = 0.0;
+      cc[0] = 1.0; ff[0] = 0.0;
 
       ier = prog_right(nc,aa,bb,cc,ff,al,y1);
       if (ier!=0) mpierr("Bad solution 1",1);
@@ -382,8 +417,7 @@ int main(int argc, char *argv[])
     MPI_Allreduce(&s1, &s0, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   }
 
-  double E = 1.34/100 / (np * (t1-t2));
-  if (mp==0) fprintf(stderr,"nx=%d t1=%le t2=%le treal=%le Eff=%le dmax=%le\n",nx,t1,t2,t1-t2,E,s0);
+  if (mp==0) fprintf(stderr,"nx=%d t1=%le t2=%le dmax=%le\n",nx,t1,t2,s0);
   fprintf(Fo,"t1=%le t2=%le dmax=%le\n",t1,t2,s0);
 
   ier = fclose_m(&Fo);
