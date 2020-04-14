@@ -305,7 +305,7 @@ void* myjobt(void* d)
 
   // Wait of all threads:
 
-    while(ne<nt) //madelay(5);
+    while(ne<nt) mydelay(2);
 
     if (rc > 0) return 0;
 
@@ -361,7 +361,7 @@ void* myjobt(void* d)
 
   // Wait of all threads:
 
-    while(ne<2*nt) //madelay(5);
+    while(ne<2*nt) mydelay(2);
 
   // Global data exchange:
 
@@ -404,7 +404,7 @@ void* myjobt(void* d)
 
   // Wait of first thread:
 
-    while(ne==2*nt) //madelay(5);
+    while(ne==2*nt) mydelay(2);
 
     if (rc > 0) return 0;
 
@@ -453,7 +453,7 @@ void* myjobt(void* d)
 
   // Wait of first thread:
 
-  while(ne<nt) //madelay(5);
+  while(ne<nt) mydelay(2);
 
   // Final data exchange:
 

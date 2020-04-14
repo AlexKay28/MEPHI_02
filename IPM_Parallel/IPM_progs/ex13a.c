@@ -2,7 +2,7 @@
 //
 //  du/dt = (d/dx)(k(x)du/dx) + f(x,t), xa < x < xb, t>0
 //
-//  u(x,0) = g0(x), u(xa,t) = g1(t), u(xb,t) = g2(t) 
+//  u(x,0) = g0(x), u(xa,t) = g1(t), u(xb,t) = g2(t)
 //
 //  Explicit scheme
 //
@@ -158,11 +158,16 @@ int main(int argc, char *argv[])
 
   t1 = MPI_Wtime();
 
-  u10 = u1 - u0; omg0 = 1.0 / tau0; omg1 = 1.0 / tau1;
-  hx = (xb-xa)/nx; hx2 = hx * hx;
-  tau = 0.5 * hx2 / dmax(k1,k2); tau = dmin(tau,1.0/q0);
+  u10 = u1 - u0;
+  omg0 = 1.0 / tau0;
+  omg1 = 1.0 / tau1;
+  hx = (xb-xa)/nx;
+  hx2 = hx * hx;
+  tau = 0.5 * hx2 / dmax(k1,k2);
+  tau = dmin(tau,1.0/q0);
   gam = tau / hx2;
-  s0 = dmin(tmax/tau,1000000000.0); ntm = imin(ntm,(int)s0);
+  s0 = dmin(tmax/tau,1000000000.0);
+  ntm = imin(ntm,(int)s0);
 
   fprintf(Fo,"u10=%le omg0=%le omg1=%le\n",u10,omg0,omg1);
   fprintf(Fo,"hx=%le tau=%le ntm=%d\n",hx,tau,ntm);
@@ -192,7 +197,9 @@ int main(int argc, char *argv[])
       aa[i] = 0.0; bb[i] = 0.0;
     }
     else {
-      s0 = k(xx[i]); s1 = k(xx[i]-hx); s2 = k(xx[i]+hx);
+      s0 = k(xx[i]);
+      s1 = k(xx[i]-hx);
+      s2 = k(xx[i]+hx);
       aa[i] = gam * 2.0 * s0 * s1 / (s0 + s1);
       bb[i] = gam * 2.0 * s0 * s2 / (s0 + s2);
     }
@@ -242,11 +249,9 @@ int main(int argc, char *argv[])
         gt = dmax(gt,dabs(s0));
       }
       gt = gt / tau;
-
       if (np>1) {
         s0 = gt; MPI_Allreduce(&s0,&gt,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
       }
-
       if (mp == 0) {
         t2 = MPI_Wtime() - t1;
         fprintf(stderr,"ntv=%d tv=%le gt=%le tcpu=%le\n",ntv,tv,gt,t2);

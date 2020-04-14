@@ -102,6 +102,17 @@ void myerr(char *msg, const int n)
   puts(msg); exit(n);
 }
 
+double mydelay(const int n)
+{
+  int i;
+  double s=0.0;
+
+  for(i=0; i<n; i++)
+    s += exp(-1.23*i);
+
+  return s;
+}
+
 double integrate(double f(double x), double a, double b, int n)
 {
   int i; double h, s;

@@ -170,7 +170,9 @@ int main(int argc, char *argv[])
       aa[0] = 0.0; bb[0] = 0.0; cc[0] = 1.0; ff[0] = ua;
     }
     else {
-      s0 = k(y0[0]); s1 = k(y0m); s2 = k(y0[1]);
+      s0 = k(y0[0]);
+      s1 = k(y0m);
+      s2 = k(y0[1]);
       aa[0] = 0.5 * (s0 + s1);
       bb[0] = 0.5 * (s0 + s2);
       cc[0] = hx2 * q(y0[0]) + aa[0] + bb[0];
@@ -189,7 +191,9 @@ int main(int argc, char *argv[])
       aa[ncm] = 0.0; bb[ncm] = 0.0; cc[ncm] = 1.0; ff[ncm] = ub;
     }
     else {
-      s0 = k(y0[ncm]); s1 = k(y0[ncm-1]); s2 = k(y0p);
+      s0 = k(y0[ncm]);
+      s1 = k(y0[ncm-1]);
+      s2 = k(y0p);
       aa[ncm] = 0.5 * (s0 + s1);
       bb[ncm] = 0.5 * (s0 + s2);
       cc[ncm] = hx2 * q(y0[ncm]) + aa[ncm] + bb[ncm];
@@ -207,7 +211,8 @@ int main(int argc, char *argv[])
     }
 
     if (np>1) {
-      s0 = rka; MPI_Allreduce(&s0,&rka,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+      s0 = rka;
+      MPI_Allreduce(&s0,&rka,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
     }
 
     if (lp>0) {
@@ -240,7 +245,9 @@ int main(int argc, char *argv[])
 
   s0 = 0.0;
   for (i=0; i<nc; i++) {
-    s1 = u(xx[i]); s2 = dabs(s1-y1[i]); s0 = dmax(s0,s2);
+    s1 = u(xx[i]);
+    s2 = dabs(s1-y1[i]);
+    s0 = dmax(s0,s2);
     if (lp>0)
       fprintf(Fo,"i=%8d x=%12le y=%12le u=%12le d=%12le\n",
         (i1+i),xx[i],y1[i],s1,s2);

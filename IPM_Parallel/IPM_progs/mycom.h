@@ -35,6 +35,8 @@ double mytime(const int n);
 
 void myerr(char *msg, const int n);
 
+double mydelay(const int n);
+
 double integrate(double f(double x), double a, double b, int n);
 
 int fopen_m(FILE** F, const char* name, const char* mode);

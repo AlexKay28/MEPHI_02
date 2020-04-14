@@ -1,0 +1,385 @@
+mm//  Nonlinear boundary problem:
+//
+//  (k(u)u')' - q(u)u = - f(u), xa < x < xb
+//
+//  u(xa) = ua, u(xb) = ub
+//
+//  Simple iterations
+//
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <math.h>
+#include "mycom.h"
+#include "mynet.h"
+#include "myprog.h"
+
+typedef struct tag_data_t {
+  int nt, mt, rc;
+} data_t;
+
+pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+int nt, ne=0, rc=0;
+
+int np, mp, nl, ier, lp;
+char pname[MPI_MAX_PROCESSOR_NAME];
+char sname[10] = "ex12b.p00";
+MPI_Status status;
+union_t buf;
+double tick, t1, t2, t3;
+
+FILE *Fi = NULL;
+FILE *Fo = NULL;
+
+int nx, it, itm;
+double xa, xb, ua, ub, alf, eps, pa, pa2, pa3, uc, rka;
+double tetta = 0.8;
+
+double k(double u);
+double k(double u) {
+  return 1.0 + u*u;
+}
+
+double k1(double u);
+double k1(double u) {
+  return 2.0*u;
+}
+
+double q(double u);
+double q(double u) {
+  return 1.0 / (1.0 + u*u);
+}
+
+double q_u(double u);
+double q_u(double u){
+  return -2*u/((1+u*u)*(1+u*u));
+}
+
+double u(double x);
+double u(double x) {
+  return ua*exp(pa*(x-xa));
+}
+
+double u1(double u);
+double u1(double u) {
+  return pa*u;
+}
+
+double u2(double u);
+double u2(double u) {
+  return pa2*u;
+}
+
+double u2_u(double u);
+double u2_u(double u){
+  return pa2;
+}
+
+double f(double u);
+double f(double u) {
+  return q(u)*u - k1(u)*u1(u)*u1(u) - k(u)*u2(u);
+}
+
+double f_u(double u);
+double f_u(double u){
+  return q_u(u)*u + q(u) - k(u)*u2_u(u);
+}
+
+void* myjobt(void* d);
+void* myjobt(void* d){
+
+  int i, j, i1, i2, nc, ncm, ncp, ncx;
+  double s0, s1, s2, a0, b0, c0, f0, a1, b1, c1, f1;
+  double *xx, *aa, *bb, *cc, *ff, *al, *y1, *y2, *y3;
+
+  data_t* data = (data_t *)d;
+  int nt = data->nt;
+  int mt = data->mt;
+
+  int nn = np*nt;      // total thread number
+  int mm = nt*mp + mt; // global thread id
+
+  MyRange(nn,mm,0,nx,&i1,&i2,&nc);
+
+  ncm = nc-1;
+  ncp = 2*(np-1);
+  ncx = imax(nc,ncp);
+
+  if (lp>0) {
+    fprintf(stderr,"mp=%d mt=%d mm=%d i1=%d i2=%d nc=%d\n",mp,mt,mm,i1,i2,nc);
+
+    pthread_mutex_lock(&mut); // lock
+    fprintf(Fo,"mp=%d mt=%d mm=%d i1=%d i2=%d nc=%d\n",mp,mt,mm,i1,i2,nc);
+    pthread_mutex_unlock(&mut); // unlock
+  }
+
+  //////////////////////////////////
+  // Случай когда тред всего 1 ?? //
+  //////////////////////////////////
+
+  xx = (double*)(malloc(sizeof(double)*nc));
+  y0 = (double*)(malloc(sizeof(double)*nc));
+  y1 = (double*)(malloc(sizeof(double)*nc));
+
+  aa = (double*)(malloc(sizeof(double)*ncx));
+  bb = (double*)(malloc(sizeof(double)*ncx));
+  cc = (double*)(malloc(sizeof(double)*ncx));
+  ff = (double*)(malloc(sizeof(double)*ncx));
+  al = (double*)(malloc(sizeof(double)*ncx));
+
+  y2 = (double*)(malloc(sizeof(double)*nc));
+  y3 = (double*)(malloc(sizeof(double)*nc));
+
+  // global arrays
+
+  if (np>1) {
+    y4 = (double*)(malloc(sizeof(double)*ncp));
+    dd = (double*)(malloc(sizeof(double)*4*ncp));
+    ee = (double*)(malloc(sizeof(double)*4*ncp));
+  }
+
+  for (i=0; i<nc; i++) xx[i] = xa + hx * (i1 + i); // grid
+
+  it = 0;
+
+  for (i=0; i<nc; i++) y1[i] = ua + uc * (xx[i]-xa); // start solution
+
+// Iterations:
+
+  do {
+    for (i=0; i<nc; i++) y0[i] = y1[i];
+
+    if (nt>1)
+      BndExch1D(nn,mm,1,1,1,1,&(y0[0]),&y0m,&(y0[ncm]),&y0p);
+    else {
+      y0m = 0.0; y0p = 0.0;
+    }
+
+    if (mm==0) {
+      aa[0] = 0.0;
+      bb[0] = 0.0;
+      cc[0] = 1.0;
+      ff[0] = ua;
+    }
+    else {
+      s0 = k(y0[0]);
+      s1 = k(y0m);
+      s2 = k(y0[1]);
+      aa[0] = 0.5 * (s0 + s1);
+      bb[0] = 0.5 * (s0 + s2);
+      cc[0] = hx2 * q(y0[0]) + aa[0] + bb[0];
+      ff[0] = hx2 * f(y0[0]);
+    }
+
+    for (i=1; i<ncm; i++) {
+      s0 = k(y0[i]); s1 = k(y0[i-1]); s2 = k(y0[i+1]);
+      aa[i] = 0.5 * (s0 + s1);
+      bb[i] = 0.5 * (s0 + s2);
+      cc[i] = hx2 * q(y0[i]) + aa[i] + bb[i];
+      ff[i] = hx2 * f(y0[i]);
+    }
+
+    if (mm==nn-1) {
+      aa[ncm] = 0.0; bb[ncm] = 0.0; cc[ncm] = 1.0; ff[ncm] = ub;
+    }
+    else {
+      s0 = k(y0[ncm]);
+      s1 = k(y0[ncm-1]);
+      s2 = k(y0p);
+      aa[ncm] = 0.5 * (s0 + s1);
+      bb[ncm] = 0.5 * (s0 + s2);
+      cc[ncm] = hx2 * q(y0[ncm]) + aa[ncm] + bb[ncm];
+      ff[ncm] = hx2 * f(y0[ncm]);
+    }
+
+    rka = 0.0;
+
+    for (i=0; i<nc; i++) {
+      s0 = y0[i];
+      if (i==  0) { if (mm>   0) sm = y0m; else sm = 0.0; } else sm = y0[i-1];
+      if (i==ncm) { if (mm<nn-1) sp = y0p; else sp = 0.0; } else sp = y0[i+1];
+
+      // MAIN FORMULA !
+      s1 = ff[i] + aa[i] * sm + bb[i] * sp - cc[i] * s0;
+      s1 = s1 + tetta * (y0[i]-sm)*(q_u(y0[i])*y0[i] - f_u(y0[i]))*hx2;
+
+      rka = dmax(rka,dabs(s1));
+    }
+
+
+    // за это отвечает первый тред процесса
+    if (nn>1) {
+      s0 = rka;
+      MPI_Allreduce(&s0,&rka,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+    }
+
+    if (lp>0) {
+      if (mm==0) fprintf(stderr,"it=%d rka=%le\n",it,rka);
+      fprintf(Fo,"it=%d rka=%le\n",it,rka);
+    }
+
+    if (rka<=eps) break;
+
+    it++;
+
+    if (lp>0)
+      for (i=0; i<nc; i++)
+        fprintf(Fo,"i=%8d a=%12le b=%12le c=%12le f=%12le\n",
+          (i1+i),aa[i],bb[i],cc[i],ff[i]);
+
+    if (nn<2) ier = prog_right(nc,aa,bb,cc,ff,al,y1);
+    else      ier = prog_rightp(nn,mm,nc,aa,bb,cc,ff,al,y1,y2,y3,y4,dd,ee);
+
+    if (ier!=0) mpierr("Bad solution",1);
+
+    if (lp>0)
+      for (i=0; i<nc; i++)
+        fprintf(Fo,"i=%8d x=%12le y0=%12le y1=%12le\n",
+          (i1+i),xx[i],y0[i],y1[i]);
+
+  } while (it<=itm);
+
+  // Residual:
+  s0 = 0.0;
+  for (i=0; i<nc; i++) {
+    s1 = u(xx[i]);
+    s2 = dabs(s1-y1[i]);
+    s0 = dmax(s0,s2);
+    if (lp>0)
+      fprintf(Fo,"i=%8d x=%12le y=%12le u=%12le d=%12le\n",
+        (i1+i),xx[i],y1[i],s1,s2);
+  }
+
+  if (np>1) {
+    s1 = s0; MPI_Allreduce(&s1,&s0,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+  }
+
+  // Sum of residual:
+  pthread_mutex_lock(&mut); // lock
+  dm = dmax(dm,s0);
+  ne++;
+  pthread_mutex_unlock(&mut); // unlock
+
+  // Wait of first thread:
+  while(ne<nt) mydelay(5);
+
+  // Final data exchange:
+  if ((np>1) && (mt==0)) {
+    double t = MPI_Wtime();
+
+    s1 = dm;
+    MPI_Allreduce(&s1,&dm,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+
+    t2 += (MPI_Wtime() - t);
+  }
+
+  return 0;
+}
+
+int main(int argc, char *argv[])
+{
+
+  int i;
+
+  pthread_t* threads;
+  data_t* data;
+
+  MyNetInit(&argc,&argv,&np,&mp,&nl,pname,&tick);
+
+  fprintf(stderr,"Netsize: %d, process: %d, system: %s, tick=%12le\n",np,mp,pname,tick);
+  sleep(1);
+
+  sprintf(sname+7,"%02d",mp);
+  ier = fopen_m(&Fo,sname,"wt");
+  if (ier!=0) mpierr("Protocol file not opened",1);
+
+  if (mp==0) {
+    ier = fopen_m(&Fi,"ex12a.d","rt");
+    if (ier!=0) mpierr("Data file not opened",2);
+    i = fscanf(Fi,"xa=%le\n",&xa);
+    i = fscanf(Fi,"xb=%le\n",&xb);
+    i = fscanf(Fi,"ua=%le\n",&ua);
+    i = fscanf(Fi,"ub=%le\n",&ub);
+    i = fscanf(Fi,"alf=%le\n",&alf);
+    i = fscanf(Fi,"eps=%le\n",&eps);
+    i = fscanf(Fi,"itm=%d\n",&itm);
+    i = fscanf(Fi,"nx=%d\n",&nx);
+    i = fscanf(Fi,"lp=%d\n",&lp);
+    fclose_m(&Fi);
+    if (argc>1) sscanf(argv[1],"%d",&nx);
+  }
+
+  if (np>1) {
+    if (mp==0) {
+      buf.ddata[0] = xa; buf.ddata[1] = xb;
+      buf.ddata[2] = ua; buf.ddata[3] = ub;
+      buf.ddata[4] = alf; buf.ddata[5] = eps;
+      buf.idata[12] = itm; buf.idata[13] = nx;
+      buf.idata[14] = lp;
+    }
+    MPI_Bcast(buf.ddata,8,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    if (mp>0) {
+      xa = buf.ddata[0]; xb = buf.ddata[1];
+      ua = buf.ddata[2]; ub = buf.ddata[3];
+      alf = buf.ddata[4]; eps = buf.ddata[5];
+      itm = buf.idata[12]; nx = buf.idata[13];
+      lp = buf.idata[14];
+    }
+  }
+
+  ub = ua * exp(alf);
+
+  fprintf(Fo,"Netsize: %d, process: %d, system: %s, tick=%12le\n",
+    np,mp,pname,tick);
+
+  fprintf(Fo,"xa=%le xb=%le ua=%le ub=%le alf=%le eps=%le itm=%d nx=%d lp=%d\n",
+    xa,xb,ua,ub,alf,eps,itm,nx,lp);
+
+  t1 = MPI_Wtime();
+
+  pa = alf / (xb-xa); pa2 = pa*pa; pa3 = pa2*pa; uc = (ub-ua) / (xb-xa);
+
+  hx = (xb-xa)/nx; hx2 = hx * hx;
+
+
+  // =============================== threads
+
+  if (!(threads = (pthread_t*) malloc(nt*sizeof(pthread_t))))
+    mpierr("Not enough memory",3);
+
+  if (!(data = (data_t*) malloc(nt*sizeof(data_t))))
+    mpierr("Not enough memory",4);
+
+  for (i=0; i<nt; i++){
+    (data+i)->nt=nt;
+    (data+i)->mt=i;
+    (data+i)->rc=0;
+
+    if (pthread_create(threads+i,0,myjobt,(void*)(data+i)))
+      mpierr("Can not create thread",5);
+  }
+
+  for (i=0; i<nt; i++){
+    if (pthread_join(threads[i],0))
+      mpierr("Can not wait thread",6);
+    else {
+      int k = (data+i)->rc;
+      fprintf(stderr,"mp=%d mt=%d rc=%d rk=%d\n",mp,i,rc,k);
+    }
+  }
+
+  free(data); free(threads);
+
+  // =============================== threads
+
+  t1 = MPI_Wtime() - t1;
+
+  if (mp==0) fprintf(stderr,"nx=%d it=%d time=%le dmax=%le\n",nx,it,t1,s0);
+  fprintf(Fo,"nx=%d it=%d time=%le dmax=%le\n",nx,it,t1,s0);
+
+  ier = fclose_m(&Fo);
+
+  MPI_Finalize();
+  return 0;
+}

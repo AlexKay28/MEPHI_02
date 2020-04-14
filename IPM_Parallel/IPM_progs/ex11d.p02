@@ -1,0 +1,5 @@
+Netsize: 10, process: 2, system: AlexKay, tick=1.000000e-09
+xa=0.000000e+00 xb=1.000000e+00 ua=1.000000e+00 ub=2.000000e+00 nx=2000 lp=0
+i1=401 i2=600 nc=200
+np=10 mp=2 nx=2000 ncm=199 ncp=18 ncx=200
+t1=4.852834e-03 t2=4.609397e-03 dmax=2.694394e-07
