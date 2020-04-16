@@ -157,13 +157,25 @@ int main(int argc, char *argv[])
   ff = (double*)(malloc(sizeof(double)*ncx));
   al = (double*)(malloc(sizeof(double)*ncx));
 
-  if (np>1) {
+'''  if (np>1) {
     y2 = (double*)(malloc(sizeof(double)*nc));
     y3 = (double*)(malloc(sizeof(double)*nc));
     y4 = (double*)(malloc(sizeof(double)*ncp));
     dd = (double*)(malloc(sizeof(double)*4*ncp));
     ee = (double*)(malloc(sizeof(double)*4*ncp));
+  }'''
+
+  if (nn>1) {
+  y2 = (double*)(malloc(sizeof(double)*nc));
+  y3 = (double*)(malloc(sizeof(double)*nc));
+
+  if (mt==0) {
+    y4 = (double*)(malloc(sizeof(double)*ncp));
+    dd = (double*)(malloc(sizeof(double)*4*ncp));
+    ee = (double*)(malloc(sizeof(double)*4*ncp));
+    y5 = (double*)(malloc(sizeof(double)*(2*nt+2)));
   }
+}
 
   for (i=0; i<nc; i++) xx[i] = xa + hx * (i1 + i); // grid
 
