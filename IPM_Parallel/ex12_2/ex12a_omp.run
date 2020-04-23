@@ -1,0 +1,49 @@
+#
+ex12a_omp.px 10 1
+ex12a_omp.px 100 1
+ex12a_omp.px 1000 1
+ex12a_omp.px 10000 1
+ex12a_omp.px 100000 1
+ex12a_omp.px 1000000 1
+#
+ex12a_omp.px 100000 1
+ex12a_omp.px 100000 2
+ex12a_omp.px 100000 4
+ex12a_omp.px 100000 8
+ex12a_omp.px 100000 16
+ex12a_omp.px 100000 32
+#
+mpirun -np 1  ex12a_omp.px 100000 1
+mpirun -np 2  ex12a_omp.px 100000 1
+mpirun -np 4  ex12a_omp.px 100000 1
+mpirun -np 8  ex12a_omp.px 100000 1
+mpirun -np 16 ex12a_omp.px 100000 1
+mpirun -np 32 ex12a_omp.px 100000 1
+#
+mpirun -np 1  ex12a_omp.px 100000 1
+#
+mpirun -np 1  ex12a_omp.px 100000 2
+mpirun -np 2  ex12a_omp.px 100000 1
+#
+mpirun -np 1  ex12a_omp.px 100000 4
+mpirun -np 2  ex12a_omp.px 100000 2
+mpirun -np 4  ex12a_omp.px 100000 1
+#
+mpirun -np 1  ex12a_omp.px 100000 8
+mpirun -np 2  ex12a_omp.px 100000 4
+mpirun -np 4  ex12a_omp.px 100000 2
+mpirun -np 8  ex12a_omp.px 100000 1
+#
+mpirun -np 1  ex12a_omp.px 100000 16
+mpirun -np 2  ex12a_omp.px 100000 8
+mpirun -np 4  ex12a_omp.px 100000 4
+mpirun -np 8  ex12a_omp.px 100000 2
+mpirun -np 16 ex12a_omp.px 100000 1
+#
+mpirun -np 1  ex12a_omp.px 100000 32
+mpirun -np 2  ex12a_omp.px 100000 16
+mpirun -np 4  ex12a_omp.px 100000 8
+mpirun -np 8  ex12a_omp.px 100000 4
+mpirun -np 16 ex12a_omp.px 100000 2
+mpirun -np 32 ex12a_omp.px 100000 1
+#

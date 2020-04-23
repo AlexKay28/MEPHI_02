@@ -4,7 +4,7 @@
 //
 //  u(x,0) = g0(x), u(xa,t) = g1(t), u(xb,t) = g2(t)
 //
-//  Explicit scheme
+//  Implicit scheme
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,11 +14,12 @@
 #include "mycom.h"
 #include "mynet.h"
 #include "myio.h"
+#include "myprog.h"
 
  int np, mp, nl, ier, lp;
  int mp_l, mp_r;
  char pname[MPI_MAX_PROCESSOR_NAME];
- char vname[10] = "ex13a";
+ char vname[10] = "ex13b";
  char sname[20];
  MPI_Status status;
  union_t buf;
@@ -63,9 +64,9 @@ double g2(double t) {
 
 int main(int argc, char *argv[])
 {
-  int i, j, ii, i1, i2, nc, ncm;
+  int i, j, ii, i1, i2, nc, ncm, ncp, ncx;
   double hx, hx2, tau, gam, s0, s1, s2, s3, y0m, y0p;
-  double *xx, *aa, *bb, *y0, *y1;
+  double *xx, *aa, *bb, *cc, *ff, *y0, *y1, *y2, *y3, *y4, *al;
 
   MyNetInit(&argc,&argv,&np,&mp,&nl,pname,&tick);
 
@@ -163,7 +164,7 @@ int main(int argc, char *argv[])
   omg1 = 1.0 / tau1;
   hx = (xb-xa)/nx;
   hx2 = hx * hx;
-  tau = 0.5 * hx2 / dmax(k1,k2);
+  tau = 0.5 * hx / sqrt(dmax(k1,k2));
   tau = dmin(tau,1.0/q0);
   gam = tau / hx2;
   s0 = dmin(tmax/tau,1000000000.0);
@@ -178,6 +179,8 @@ int main(int argc, char *argv[])
 
   MyRange(np,mp,0,nx,&i1,&i2,&nc);
   ncm = nc-1;
+  ncp = 2*(np-1);
+  ncx = imax(nc,ncp);
 
   fprintf(Fo,"i1=%d i2=%d nc=%d\n",i1,i2,nc);
 
@@ -187,8 +190,18 @@ int main(int argc, char *argv[])
 
   aa = (double*)(malloc(sizeof(double)*nc));
   bb = (double*)(malloc(sizeof(double)*nc));
+  cc = (double*)(malloc(sizeof(double)*nc));
+  ff = (double*)(malloc(sizeof(double)*nc));
+  al = (double*)(malloc(sizeof(double)*ncx));
+
+  if (np>1) {
+    y2 = (double*)(malloc(sizeof(double)*nc));
+    y3 = (double*)(malloc(sizeof(double)*nc));
+    y4 = (double*)(malloc(sizeof(double)*9*ncp));
+  }
 
   for (i=0; i<nc; i++) xx[i] = xa + hx * (i1 + i); // grid
+
 
   for (i=0; i<nc; i++) {
     ii = i1 + i;
@@ -196,6 +209,7 @@ int main(int argc, char *argv[])
     if ((ii==0) || (ii==nx)) {
       aa[i] = 0.0;
       bb[i] = 0.0;
+      cc[i] = 1.0;
     }
     else {
       s0 = k(xx[i]);
@@ -203,6 +217,7 @@ int main(int argc, char *argv[])
       s2 = k(xx[i]+hx);
       aa[i] = gam * 2.0 * s0 * s1 / (s0 + s1);
       bb[i] = gam * 2.0 * s0 * s2 / (s0 + s2);
+      cc[i] = 1.0 + aa[i] + bb[i];
     }
   }
 
@@ -226,24 +241,31 @@ int main(int argc, char *argv[])
     for (i=0; i<nc; i++) {
       ii = i1 + i;
 
-      if (ii==0)
-        y1[i] = g1(tv);
-
-      else if (ii==nx)
-        y1[i] = g2(tv);
-
+      if (ii==0)       ff[i] = g1(tv);
+      else if (ii==nx) ff[i] = g2(tv);
       else {
+
+    // Implicit part
+        ff[i] = y0[i] + tau * f(xx[i],tv);
+
+    // Explicit part
         if (i==0) s1 = aa[i] * (y0[i] - y0m);
         else      s1 = aa[i] * (y0[i] - y0[i-1]);
 
         if (i==ncm) s2 = bb[i] * (y0p - y0[i]);
         else        s2 = bb[i] * (y0[i+1] - y0[i]);
-
         s3 = tau * f(xx[i],tv-tau);
-
         y1[i] += (s2 - s1 + s3);
+
+    // sum of parts
+        ff[i] = 1/2 * (ff[i] + y1[i]);
       }
     }
+
+    if (np<2) ier = prog_right(nc,aa,bb,cc,ff,al,y1);
+    else      ier = prog_rightpm(np,mp,nc,ntv,aa,bb,cc,ff,al,y1,y2,y3,y4);
+
+    if (ier!=0) mpierr("Bad solution",1);
 
     if (ntv % ntp == 0) {
       gt = 0.0;
@@ -252,9 +274,11 @@ int main(int argc, char *argv[])
         gt = dmax(gt,dabs(s0));
       }
       gt = gt / tau;
+
       if (np>1) {
         s0 = gt; MPI_Allreduce(&s0,&gt,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
       }
+
       if (mp == 0) {
         t2 = MPI_Wtime() - t1;
         fprintf(stderr,"ntv=%d tv=%le gt=%le tcpu=%le\n",ntv,tv,gt,t2);

@@ -1,0 +1,9 @@
+#
+mpicc -o ex12a_mod.px -O2          ex12a_mod.c mycom.c mynet.c myprog.c -lm
+mpicc -o ex12a_omp.px -O2 -fopenmp ex12a_omp.c mycom.c mynet.c myprog.c -lm
+mpicc -o ex12a_pth.px -O2 -pthread ex12a_pth.c mycom.c mynet.c myprog.c -lm
+#
+mpicc -o ex12b_mod.px -O2          ex12b_mod.c mycom.c mynet.c myprog.c -lm
+mpicc -o ex12b_omp.px -O2 -fopenmp ex12b_omp.c mycom.c mynet.c myprog.c -lm
+mpicc -o ex12b_pth.px -O2 -pthread ex12b_pth.c mycom.c mynet.c myprog.c -lm
+#

@@ -1,0 +1,2 @@
+mpicc -o ex12a_mod.px -O2 ex12a_mod.c mycom.c mynet.c myprog.c -lm
+mpicc -o ex12a_omp.px -O2 -fopenmp ex12a_omp.c mycom.c mynet.c myprog.c -lm

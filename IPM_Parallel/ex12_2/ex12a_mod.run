@@ -1,0 +1,15 @@
+#
+ex12a_mod.px 10
+ex12a_mod.px 100
+ex12a_mod.px 1000
+ex12a_mod.px 10000
+ex12a_mod.px 100000
+ex12a_mod.px 1000000
+#
+mpirun -np 1  ex12a_mod.px 100000
+mpirun -np 2  ex12a_mod.px 100000
+mpirun -np 4  ex12a_mod.px 100000
+mpirun -np 8  ex12a_mod.px 100000
+mpirun -np 16 ex12a_mod.px 100000
+mpirun -np 32 ex12a_mod.px 100000
+#

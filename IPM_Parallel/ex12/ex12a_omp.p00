@@ -1,0 +1,9 @@
+Netsize: 2, process: 0, system: AlexKay, max_thr: 4, thr: 5, tick=1.000000e-09
+xa=0.000000e+00 xb=1.000000e+00 ua=1.000000e+00 ub=2.718282e+00 alf=1.000000e+00
+eps=1.000000e-13 itm=1000 nx=100 lp=0
+[0,2] i1=21 i2=30 nc=10
+[0,0] i1=0 i2=10 nc=11
+[0,4] i1=41 i2=50 nc=10
+[0,3] i1=31 i2=40 nc=10
+[0,1] i1=11 i2=20 nc=10
+np=2 nt=5 nx=100 it=1 rc=0 time=9.939738e-03 dmax=0.000000e+00

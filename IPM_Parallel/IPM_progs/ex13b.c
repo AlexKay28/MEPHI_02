@@ -2,7 +2,7 @@
 //
 //  du/dt = (d/dx)(k(x)du/dx) + f(x,t), xa < x < xb, t>0
 //
-//  u(x,0) = g0(x), u(xa,t) = g1(t), u(xb,t) = g2(t) 
+//  u(x,0) = g0(x), u(xa,t) = g1(t), u(xb,t) = g2(t)
 //
 //  Implicit scheme
 //
@@ -159,11 +159,16 @@ int main(int argc, char *argv[])
 
   t1 = MPI_Wtime();
 
-  u10 = u1 - u0; omg0 = 1.0 / tau0; omg1 = 1.0 / tau1;
-  hx = (xb-xa)/nx; hx2 = hx * hx;
+  u10 = u1 - u0;
+  omg0 = 1.0 / tau0;
+  omg1 = 1.0 / tau1;
+  hx = (xb-xa)/nx;
+  hx2 = hx * hx;
   tau = 0.5 * hx / sqrt(dmax(k1,k2));
-  tau = dmin(tau,1.0/q0); gam = tau / hx2;
-  s0 = dmin(tmax/tau,1000000000.0); ntm = imin(ntm,(int)s0);
+  tau = dmin(tau,1.0/q0);
+  gam = tau / hx2;
+  s0 = dmin(tmax/tau,1000000000.0);
+  ntm = imin(ntm,(int)s0);
 
   fprintf(Fo,"u10=%le omg0=%le omg1=%le\n",u10,omg0,omg1);
   fprintf(Fo,"hx=%le tau=%le ntm=%d\n",hx,tau,ntm);
@@ -173,7 +178,9 @@ int main(int argc, char *argv[])
   if (mp == np-1) mp_r = -1; else mp_r = mp + 1;
 
   MyRange(np,mp,0,nx,&i1,&i2,&nc);
-  ncm = nc-1; ncp = 2*(np-1); ncx = imax(nc,ncp);
+  ncm = nc-1;
+  ncp = 2*(np-1);
+  ncx = imax(nc,ncp);
 
   fprintf(Fo,"i1=%d i2=%d nc=%d\n",i1,i2,nc);
 
@@ -199,10 +206,14 @@ int main(int argc, char *argv[])
     ii = i1 + i;
 
     if ((ii==0) || (ii==nx)) {
-      aa[i] = 0.0; bb[i] = 0.0; cc[i] = 1.0;
+      aa[i] = 0.0;
+      bb[i] = 0.0;
+      cc[i] = 1.0;
     }
     else {
-      s0 = k(xx[i]); s1 = k(xx[i]-hx); s2 = k(xx[i]+hx);
+      s0 = k(xx[i]);
+      s1 = k(xx[i]-hx); 
+      s2 = k(xx[i]+hx);
       aa[i] = gam * 2.0 * s0 * s1 / (s0 + s1);
       bb[i] = gam * 2.0 * s0 * s2 / (s0 + s2);
       cc[i] = 1.0 + aa[i] + bb[i];
