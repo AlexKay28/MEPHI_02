@@ -17,23 +17,20 @@
 #include "myprog.h"
 
 // Network objects:
-
 int np, mp, nl, ier, lp;
 int mp_l, mp_r;
 char pname[MPI_MAX_PROCESSOR_NAME];
-char vname[10] = "ex13c_mod";
+char vname[10] = "ex13b";
 char sname[20];
 MPI_Status status;
 union_t buf;
 double tick, t1, t2, t3;
 
 // Input/Output objects:
-
 FILE *Fi = NULL;
 FILE *Fo = NULL;
 
 // Application objects:
-
 int nx, ntp, ntm, ntv;
 double xa, xb, xk, x0, r0, q0, u0, u1;
 double k1, k2, tau0, tau1, tmax, epst;

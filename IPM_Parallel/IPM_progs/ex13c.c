@@ -19,7 +19,7 @@
  int np, mp, nl, ier, lp;
  int mp_l, mp_r;
  char pname[MPI_MAX_PROCESSOR_NAME];
- char vname[10] = "ex13b";
+ char vname[15] = "ex13b";
  char sname[20];
  MPI_Status status;
  union_t buf;
@@ -202,7 +202,6 @@ int main(int argc, char *argv[])
 
   for (i=0; i<nc; i++) xx[i] = xa + hx * (i1 + i); // grid
 
-
   for (i=0; i<nc; i++) {
     ii = i1 + i;
 
@@ -290,7 +289,6 @@ int main(int argc, char *argv[])
       for (i=0; i<nc; i++)
         fprintf(Fo,"i=%8d x=%12le y1=%12le\n",(i1+i),xx[i],y1[i]);
     }
-
   } while ((ntv<ntm) && (gt>epst));
 
   t1 = MPI_Wtime() - t1;

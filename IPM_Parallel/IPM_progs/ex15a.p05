@@ -1,0 +1,6 @@
+Netsize: 11, process: 5, system: AlexKay, tick=1.000000e-09
+Grid=1x11 coord=(0,5)
+i11=0 i12=128 nc1=129
+i21=0 i22=128 nc2=12
+n1=128 n2=128 h1=7.812500e-03 h2=7.812500e-03
+t1=7.770644e+00 dmax=5.020092e-05
